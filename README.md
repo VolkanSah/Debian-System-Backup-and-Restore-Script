@@ -18,8 +18,8 @@ This repository contains a shell script to back up and restore important system 
 ### 1. Clone the Repository
 Clone this repository to your local machine:
 ```sh
-git clone <repository_url>
-cd <repository_name>
+git clone https://github.com/VolkanSah/Debian-System-Backup-and-Restore-Script
+cd Debian-System-Backup-and-Restore-Script
 ```
 
 ### 2. Make the Script Executable
