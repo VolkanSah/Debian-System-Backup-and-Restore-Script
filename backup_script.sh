@@ -1,29 +1,29 @@
 #!/bin/bash
 
-# Konfiguration
+# Configuration
 BACKUP_DIR="/backup/$(date +%Y%m%d_%H%M%S)"
 LOG_FILE="$BACKUP_DIR/backup.log"
 EXCLUDE_FILE="/tmp/backup_exclude.txt"
 
-# Funktion zum Loggen
+# Function for logging
 log() {
     echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" | tee -a "$LOG_FILE"
 }
 
-# Backup-Funktion
+# Backup function
 backup() {
     mkdir -p "$BACKUP_DIR"
-    log "Backup gestartet in $BACKUP_DIR"
+    log "Backup started in $BACKUP_DIR"
 
-    # Liste der installierten Pakete speichern
+    # Save list of installed packages
     dpkg --get-selections > "$BACKUP_DIR/installed_packages.list"
-    log "Paketliste gespeichert in $BACKUP_DIR/installed_packages.list"
+    log "Package list saved in $BACKUP_DIR/installed_packages.list"
 
-    # Konfigurationsdateien sichern
+    # Backup configuration files
     tar czf "$BACKUP_DIR/etc_backup.tar.gz" /etc
-    log "Konfigurationsdateien gesichert in $BACKUP_DIR/etc_backup.tar.gz"
+    log "Configuration files backed up in $BACKUP_DIR/etc_backup.tar.gz"
 
-    # Ausschlussliste erstellen
+    # Create exclusion list
     cat << EOF > "$EXCLUDE_FILE"
 /proc/*
 /sys/*
@@ -36,54 +36,54 @@ backup() {
 /backup/*
 EOF
 
-    # Gesamtes Dateisystem sichern (optional)
+    # Back up entire file system (optional)
     if [ "$FULL_BACKUP" = true ]; then
-        log "Starte vollständiges Backup..."
+        log "Starting full backup..."
         tar czf "$BACKUP_DIR/full_backup.tar.gz" --exclude-from="$EXCLUDE_FILE" /
-        log "Vollständiges Backup abgeschlossen: $BACKUP_DIR/full_backup.tar.gz"
+        log "Full backup completed: $BACKUP_DIR/full_backup.tar.gz"
     fi
 
-    log "Backup abgeschlossen."
+    log "Backup completed."
 }
 
-# Wiederherstellungsfunktion
+# Restore function
 restore() {
     local restore_dir="$1"
     if [ -z "$restore_dir" ]; then
-        log "Bitte geben Sie das Backup-Verzeichnis an."
+        log "Please specify the backup directory."
         exit 1
     fi
 
-    log "Starte Wiederherstellung aus $restore_dir"
+    log "Starting restore from $restore_dir"
 
-    # Paketliste wiederherstellen
+    # Restore package list
     if [ -f "$restore_dir/installed_packages.list" ]; then
         sudo dpkg --set-selections < "$restore_dir/installed_packages.list"
         sudo apt-get -y dselect-upgrade
-        log "Paketliste wiederhergestellt."
+        log "Package list restored."
     else
-        log "Warnung: Paketliste nicht gefunden."
+        log "Warning: Package list not found."
     fi
 
-    # Konfigurationsdateien wiederherstellen
+    # Restore configuration files
     if [ -f "$restore_dir/etc_backup.tar.gz" ]; then
         sudo tar xzf "$restore_dir/etc_backup.tar.gz" -C /
-        log "Konfigurationsdateien wiederhergestellt."
+        log "Configuration files restored."
     else
-        log "Warnung: Backup der Konfigurationsdateien nicht gefunden."
+        log "Warning: Configuration files backup not found."
     fi
 
-    # Gesamtes Dateisystem wiederherstellen (optional)
+    # Restore entire file system (optional)
     if [ "$FULL_RESTORE" = true ] && [ -f "$restore_dir/full_backup.tar.gz" ]; then
-        log "Starte vollständige Wiederherstellung..."
+        log "Starting full restore..."
         sudo tar xzf "$restore_dir/full_backup.tar.gz" -C /
-        log "Vollständige Wiederherstellung abgeschlossen."
+        log "Full restore completed."
     fi
 
-    log "Wiederherstellung abgeschlossen."
+    log "Restore completed."
 }
 
-# Hauptprogramm
+# Main program
 case "$1" in
     backup)
         FULL_BACKUP=false
@@ -96,9 +96,9 @@ case "$1" in
         restore "$2"
         ;;
     *)
-        echo "Verwendung: $0 {backup|restore} [Optionen]"
-        echo "  backup [full]  - Führt ein Backup durch (optional: vollständiges Backup)"
-        echo "  restore DIR [full] - Stellt aus dem angegebenen Verzeichnis wieder her"
+        echo "Usage: $0 {backup|restore} [options]"
+        echo "  backup [full]  - Performs a backup (optional: full backup)"
+        echo "  restore DIR [full] - Restores from the specified directory"
         exit 1
         ;;
 esac
