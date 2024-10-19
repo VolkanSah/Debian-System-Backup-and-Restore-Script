@@ -1,45 +1,106 @@
 #!/bin/bash
 
-# Create backup directory
+# Konfiguration
 BACKUP_DIR="/backup/$(date +%Y%m%d_%H%M%S)"
-mkdir -p "$BACKUP_DIR"
+LOG_FILE="$BACKUP_DIR/backup.log"
+EXCLUDE_FILE="/tmp/backup_exclude.txt"
 
-# Save the list of installed packages
-dpkg --get-selections > "$BACKUP_DIR/installed_packages.list"
-echo "Package list saved to $BACKUP_DIR/installed_packages.list"
+# Funktion zum Loggen
+log() {
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" | tee -a "$LOG_FILE"
+}
 
-# Backup configuration files
-tar czf "$BACKUP_DIR/etc_backup.tar.gz" /etc
-echo "Configuration files saved to $BACKUP_DIR/etc_backup.tar.gz"
+# Backup-Funktion
+backup() {
+    mkdir -p "$BACKUP_DIR"
+    log "Backup gestartet in $BACKUP_DIR"
 
-# Optional: Backup the entire filesystem (can consume a lot of space)
-# tar czf "$BACKUP_DIR/full_backup.tar.gz" --exclude="$BACKUP_DIR" /
+    # Liste der installierten Pakete speichern
+    dpkg --get-selections > "$BACKUP_DIR/installed_packages.list"
+    log "Paketliste gespeichert in $BACKUP_DIR/installed_packages.list"
 
-# Backup complete
-echo "Backup complete. All important files are saved in $BACKUP_DIR."
+    # Konfigurationsdateien sichern
+    tar czf "$BACKUP_DIR/etc_backup.tar.gz" /etc
+    log "Konfigurationsdateien gesichert in $BACKUP_DIR/etc_backup.tar.gz"
 
-# Restore function
+    # Ausschlussliste erstellen
+    cat << EOF > "$EXCLUDE_FILE"
+/proc/*
+/sys/*
+/dev/*
+/tmp/*
+/run/*
+/mnt/*
+/media/*
+/lost+found
+/backup/*
+EOF
+
+    # Gesamtes Dateisystem sichern (optional)
+    if [ "$FULL_BACKUP" = true ]; then
+        log "Starte vollständiges Backup..."
+        tar czf "$BACKUP_DIR/full_backup.tar.gz" --exclude-from="$EXCLUDE_FILE" /
+        log "Vollständiges Backup abgeschlossen: $BACKUP_DIR/full_backup.tar.gz"
+    fi
+
+    log "Backup abgeschlossen."
+}
+
+# Wiederherstellungsfunktion
 restore() {
-    BACKUP_DIR="$1"
-    if [ -z "$BACKUP_DIR" ]; then
-        echo "Please specify the backup directory."
+    local restore_dir="$1"
+    if [ -z "$restore_dir" ]; then
+        log "Bitte geben Sie das Backup-Verzeichnis an."
         exit 1
     fi
 
-    # Restore the list of installed packages
-    sudo dpkg --set-selections < "$BACKUP_DIR/installed_packages.list"
-    sudo apt-get -y dselect-upgrade
-    echo "Package list restored."
+    log "Starte Wiederherstellung aus $restore_dir"
 
-    # Restore configuration files
-    tar xzf "$BACKUP_DIR/etc_backup.tar.gz" -C /
-    echo "Configuration files restored."
+    # Paketliste wiederherstellen
+    if [ -f "$restore_dir/installed_packages.list" ]; then
+        sudo dpkg --set-selections < "$restore_dir/installed_packages.list"
+        sudo apt-get -y dselect-upgrade
+        log "Paketliste wiederhergestellt."
+    else
+        log "Warnung: Paketliste nicht gefunden."
+    fi
 
-    # Optional: Restore the entire filesystem
-    # tar xzf "$BACKUP_DIR/full_backup.tar.gz" -C /
+    # Konfigurationsdateien wiederherstellen
+    if [ -f "$restore_dir/etc_backup.tar.gz" ]; then
+        sudo tar xzf "$restore_dir/etc_backup.tar.gz" -C /
+        log "Konfigurationsdateien wiederhergestellt."
+    else
+        log "Warnung: Backup der Konfigurationsdateien nicht gefunden."
+    fi
+
+    # Gesamtes Dateisystem wiederherstellen (optional)
+    if [ "$FULL_RESTORE" = true ] && [ -f "$restore_dir/full_backup.tar.gz" ]; then
+        log "Starte vollständige Wiederherstellung..."
+        sudo tar xzf "$restore_dir/full_backup.tar.gz" -C /
+        log "Vollständige Wiederherstellung abgeschlossen."
+    fi
+
+    log "Wiederherstellung abgeschlossen."
 }
 
-# Automatic restore if an argument is provided
-if [ "$1" == "restore" ]; then
-    restore "$2"
-fi
+# Hauptprogramm
+case "$1" in
+    backup)
+        FULL_BACKUP=false
+        [ "$2" = "full" ] && FULL_BACKUP=true
+        backup
+        ;;
+    restore)
+        FULL_RESTORE=false
+        [ "$3" = "full" ] && FULL_RESTORE=true
+        restore "$2"
+        ;;
+    *)
+        echo "Verwendung: $0 {backup|restore} [Optionen]"
+        echo "  backup [full]  - Führt ein Backup durch (optional: vollständiges Backup)"
+        echo "  restore DIR [full] - Stellt aus dem angegebenen Verzeichnis wieder her"
+        exit 1
+        ;;
+esac
+
+exit 0
