@@ -66,7 +66,7 @@ For a complete file system backup:
 ```sh
 ./backup_script.sh backup full
 ```
-
+![Backup Script](backup-script.jpg)
 **What happens during backup:**
 - Creates a timestamped backup directory in `/backup/YYYYMMDD_HHMMSS`
 - Saves the list of installed packages to `installed_packages.list`
