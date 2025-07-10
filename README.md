@@ -35,9 +35,14 @@ cd Debian-System-Backup-and-Restore-Script
 Create and configure the backup directory:
 ```sh
 sudo mkdir -p /backup
-sudo chown $(whoami):$(whoami) /backup
+sudo chown $USER:$(id -gn) /backup
 sudo chmod 755 /backup
 ```
+
+**Note:** We use `$USER:$(id -gn)` instead of `$(whoami):$(whoami)` because:
+- `$(whoami)` returns only the username, not the group
+- `$(id -gn)` returns the user's primary group name
+- Using `$(whoami):$(whoami)` can fail if the user and group have different names
 
 ### 3. Make the script executable
 
@@ -99,7 +104,7 @@ If backup files are created but remain empty:
 1. **Check permissions:**
    ```sh
    ls -ld /backup
-   sudo chown $(whoami):$(whoami) /backup
+   sudo chown $USER:$(id -gn) /backup
    ```
 
 2. **Run with debug output:**
