@@ -87,4 +87,4 @@ case "$1" in
         exit 1
         ;;
 esac
-exit 0 script selbst liegt in /batscripts  und backups in /backup
+exit 0 
