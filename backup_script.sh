@@ -1,4 +1,24 @@
 #!/bin/bash
+#
+# Debian System Backup and Restore Script v3.0
+# Enhanced with comprehensive error handling and validation
+#
+# Author: Volkan Kücükbudak
+# Repository: https://github.com/VolkanSah/Debian-System-Backup-and-Restore-Script
+# License: GPL v.3
+#
+# Features:
+# - Package list backup/restore
+# - Configuration files backup (/etc)
+# - Optional full system backup
+# - Detailed logging with error checking
+# - Permission validation
+#
+# Usage:
+#   ./backup_script.sh backup [full]
+#   ./backup_script.sh restore /path/to/backup [full]
+#
+#!/bin/bash
 # Configuration
 BACKUP_DIR="/backup/$(date +%Y%m%d_%H%M%S)"
 LOG_FILE="$BACKUP_DIR/backup.log"
