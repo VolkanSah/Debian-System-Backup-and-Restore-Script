@@ -215,7 +215,7 @@ Feel free to submit issues, fork the repository, and create pull requests for an
 
 ## License
 
-This project is open source and available under the MIT License.
+This project is open source and available under the GPL-3.0 License.
 
 ## Support
 
