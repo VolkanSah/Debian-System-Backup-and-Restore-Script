@@ -1,4 +1,5 @@
 # Debian System Backup and Restore Script (Version 3.0)
+![Backup Script](backup-script.jpg)
 
 This repository contains an enhanced shell script for backing up and restoring key system elements of a Debian-based system. It is useful for creating a recovery point before making significant changes to the system.
 
@@ -66,7 +67,7 @@ For a complete file system backup:
 ```sh
 ./backup_script.sh backup full
 ```
-![Backup Script](backup-script.jpg)
+
 **What happens during backup:**
 - Creates a timestamped backup directory in `/backup/YYYYMMDD_HHMMSS`
 - Saves the list of installed packages to `installed_packages.list`
